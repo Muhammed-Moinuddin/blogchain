@@ -11,3 +11,12 @@ router.post('/register', authController.register);
 router.post('/login', authController.login);
 
 module.exports = router;
+p
+// USER
+// login, logout, register, refresh
+
+// BLOG
+// create, read-all-blogs, read-blog-by-id, update, delete
+
+// COMMENT
+// create, read-comments-by-blog-id

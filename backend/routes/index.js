@@ -4,14 +4,13 @@ const router = express.Router();
 
 router.get('/test', (req,res) => res.json({msg: "Hello World From Moin"}));
 
-//route for registeration with controller 
+//route for registeration with controller/handler 
 router.post('/register', authController.register);
 
-//route for login with controller
+//route for login with controller/handler
 router.post('/login', authController.login);
 
 module.exports = router;
-p
 // USER
 // login, logout, register, refresh
 

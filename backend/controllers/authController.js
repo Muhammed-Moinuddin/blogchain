@@ -52,13 +52,14 @@ const authController = {
         const hashedPassword = await bcrypt.hash(password, 10); 
 
         //5. store user data in db
+        let user;
         const userToRegister = new User({
             username,
             email,
             name,
             password: hashedPassword
         });
-        await userToRegister.save();
+        user = await userToRegister.save();
 
         //6. response send
         return res.status(201).json({user});

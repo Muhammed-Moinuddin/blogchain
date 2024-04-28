@@ -1,9 +1,10 @@
 const Joi = require('joi');
 const User = require('../models/user')
 const bcrypt = require('bcryptjs');
+const UserDTO = require('../dto/user');
 const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,25}$/;
-const authController = {
-    
+
+const authController = {    
     //controller for user registeration
     async register(req, res, next) {
         //1. validate user input data
@@ -62,12 +63,55 @@ const authController = {
         user = await userToRegister.save();
 
         //6. response send
-        return res.status(201).json({user});
+        const userDto = new UserDTO(user);
+        return res.status(201).json({userDto});
     },
 
     //controller for login functionality
-    async login() {
+    async login(req, res, next) {
+        //4. return response.
 
+        //1. validate user input.
+        const userLoginSchema = Joi.object({
+            username: Joi.string().alphanum().min(5).max(30).required(),
+            password: Joi.string().pattern(passwordPattern).required(),
+        });
+
+        //2. if validation error, return error.
+        const {error} = userLoginSchema.validate(req.body);
+        if(error){
+            return next(error);
+        }
+
+        //3. match username and password
+        const {username, password} = req.body;
+        let user;
+        try {
+            // username matching
+            user = await User.findOne({username: username});
+            if(!user){
+                const error = {
+                    status: 401,
+                    message: "Invalid Username"
+                }
+                return next(error);
+            }
+            //password matching
+            const match = await bcrypt.compare(password, user.password);
+            if(!match){
+                const error = {
+                    status: 401,
+                    message: "Invalid password"
+                }
+                return next(error);
+            }
+        } catch (error) {
+            return next(error);
+        }
+
+        //implementing DTO(data transfer object
+        const userDto = new UserDTO(user);
+        return res.status(200).json({user: userDto});
     }
 };
 

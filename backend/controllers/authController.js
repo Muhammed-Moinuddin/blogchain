@@ -3,6 +3,7 @@ const User = require('../models/user')
 const bcrypt = require('bcryptjs');
 const UserDTO = require('../dto/user');
 const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,25}$/;
+const JWTService = require('../services/JWTService');
 
 const authController = {    
     //controller for user registeration
@@ -53,15 +54,37 @@ const authController = {
         const hashedPassword = await bcrypt.hash(password, 10); 
 
         //5. store user data in db
+        let accessToken;
+        let refreshToken;
         let user;
-        const userToRegister = new User({
-            username,
-            email,
-            name,
-            password: hashedPassword
-        });
-        user = await userToRegister.save();
+        try {
+            const userToRegister = new User({
+                username,
+                email,
+                name,
+                password: hashedPassword
+            });
+            user = await userToRegister.save();
+            //token generation
+            accessToken = JWTService.signAccessToken({_id: user._id, username: user.email}, '30m');
+            refreshToken = JWTService.signRefreshToken({_id: user._id}, "60m");
 
+        } catch (error) {
+            return next(error);
+        }
+        //store refresh token to DB
+        JWTService.storeRefreshToken(refreshToken, user._id);
+
+        //sending tokens via cookies to client
+        res.cookie('accessToken', accessToken, {
+            maxAge: 1000 * 60 * 60 * 24,
+            httpOnly: true
+        })
+
+        res.cookie('refreshToken', refreshToken, {
+            maxAge: 1000 * 60 * 60 * 24,
+            httpOnly: true
+        })
         //6. response send
         const userDto = new UserDTO(user);
         return res.status(201).json({userDto});
